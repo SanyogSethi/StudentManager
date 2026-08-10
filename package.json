@@ -1,7 +1,7 @@
 {
   "name": "student-academic-system",
   "version": "1.0.0",
-  "description": "Secure AI-Powered Student Academic Management System with Express, MongoDB Atlas, EJS and Gemini AI",
+  "description": "Secure AI-Powered Student Academic Management System with Express, MongoDB Atlas, EJS",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -12,7 +12,6 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@google/genai": "^0.1.1",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
