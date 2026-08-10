@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Student Academic System' %></title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <%- include('../partials/sidebar') %>
+
+    <main class="main-content">
+      <%- body %>
+    </main>
+  </div>
+
+  <%- include('../partials/aiModal') %>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/dashboard-charts.js"></script>
+  <script src="/js/main.js"></script>
+</body>
+</html>

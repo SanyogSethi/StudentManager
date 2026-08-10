@@ -1,0 +1,185 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>Teacher Academic Portal</h1>
+    <p>Class oversight, daily attendance logger, and gradebook management</p>
+  </div>
+  <div class="header-actions">
+    <a href="/teacher/attendance" class="btn btn-secondary">📅 Record Attendance</a>
+    <a href="/teacher/marks" class="btn btn-primary">📝 Enter Marks</a>
+  </div>
+</div>
+
+<% if (classSummary) { %>
+  <div class="grid-metrics">
+    <div class="glass-card metric-card">
+      <div class="metric-data">
+        <h3>Class Average Score</h3>
+        <div class="metric-value"><%= classSummary.metrics.avgMarks %>%</div>
+      </div>
+      <div class="metric-icon-box bg-indigo">📈</div>
+    </div>
+
+    <div class="glass-card metric-card">
+      <div class="metric-data">
+        <h3>Average Attendance</h3>
+        <div class="metric-value"><%= classSummary.metrics.avgAttendance %>%</div>
+      </div>
+      <div class="metric-icon-box bg-cyan">📊</div>
+    </div>
+
+    <div class="glass-card metric-card">
+      <div class="metric-data">
+        <h3>Total Enrolled</h3>
+        <div class="metric-value"><%= classSummary.classInfo.totalStudents %></div>
+      </div>
+      <div class="metric-icon-box bg-emerald">👨‍🎓</div>
+    </div>
+
+    <div class="glass-card metric-card">
+      <div class="metric-data">
+        <h3>At-Risk Students</h3>
+        <div class="metric-value" style="color: var(--accent-rose);"><%= classSummary.metrics.atRiskCount %></div>
+      </div>
+      <div class="metric-icon-box bg-rose">🚨</div>
+    </div>
+  </div>
+<% } %>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1rem;">
+  <!-- Assigned Classes -->
+  <div class="glass-card">
+    <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">My Assigned Classes</h2>
+    <div class="table-container">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Grade</th>
+            <th>Roster Size</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% classes.forEach(c => { %>
+            <tr>
+              <td><strong style="color: var(--accent-cyan);"><%= c.name %></strong></td>
+              <td>Grade <%= c.gradeLevel %></td>
+              <td><%= c.students ? c.students.length : 0 %> Students</td>
+              <td>
+                <a href="/teacher/attendance?classId=<%= c._id %>" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;">Take Attendance</a>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Assignments -->
+  <div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2 style="color: #fff; font-size: 1.15rem;">Class Assignments</h2>
+      <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.78rem;" onclick="openModal('createAssignmentModal')">+ New Assignment</button>
+    </div>
+    
+    <div class="table-container">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Subject</th>
+            <th>Due Date</th>
+            <th>Max Marks</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% if (assignments && assignments.length > 0) { %>
+            <% assignments.forEach(a => { %>
+              <tr>
+                <td><strong style="color: #fff;"><%= a.title %></strong></td>
+                <td><%= a.subject ? a.subject.name : 'General' %></td>
+                <td><%= new Date(a.dueDate).toLocaleDateString() %></td>
+                <td><%= a.maxMarks %> pts</td>
+              </tr>
+            <% }); %>
+          <% } else { %>
+            <tr>
+              <td colspan="4" style="text-align: center; color: var(--text-dim); padding: 1.5rem;">No assignments published yet.</td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create Assignment -->
+<div class="modal-backdrop" id="createAssignmentModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('createAssignmentModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1.25rem;">Publish New Assignment</h2>
+    
+    <form id="createAssignmentForm">
+      <div class="form-group">
+        <label>Assignment Title</label>
+        <input type="text" id="assTitle" class="form-control" placeholder="Chapter 4 Homework" required>
+      </div>
+
+      <div class="form-group">
+        <label>Select Class</label>
+        <select id="assClassId" class="form-control" required>
+          <% classes.forEach(c => { %>
+            <option value="<%= c._id %>"><%= c.name %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Select Subject</label>
+        <select id="assSubjectId" class="form-control" required>
+          <% if (classes.length > 0 && classes[0].subjects) { %>
+            <% classes[0].subjects.forEach(s => { %>
+              <option value="<%= s._id %>"><%= s.name %></option>
+            <% }); %>
+          <% } %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Due Date</label>
+        <input type="date" id="assDueDate" class="form-control" required>
+      </div>
+
+      <div class="form-group">
+        <label>Max Marks</label>
+        <input type="number" id="assMaxMarks" class="form-control" value="100">
+      </div>
+
+      <div class="form-group">
+        <label>Instructions & Description</label>
+        <textarea id="assDescription" class="form-control" rows="3" placeholder="Enter assignment details..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Publish Assignment</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById('createAssignmentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await API.createAssignment({
+      title: document.getElementById('assTitle').value,
+      classId: document.getElementById('assClassId').value,
+      subjectId: document.getElementById('assSubjectId').value,
+      dueDate: document.getElementById('assDueDate').value,
+      maxMarks: document.getElementById('assMaxMarks').value,
+      description: document.getElementById('assDescription').value
+    });
+
+    if (res.success) {
+      showToast('Assignment published!');
+      setTimeout(() => location.reload(), 600);
+    } else showToast(res.message, 'error');
+  });
+</script>

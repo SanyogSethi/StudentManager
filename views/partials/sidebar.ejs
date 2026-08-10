@@ -1,0 +1,91 @@
+<aside class="sidebar">
+  <div class="brand-header">
+    <div class="brand-icon">⚡</div>
+    <div>
+      <div class="brand-title">Aegis Academic</div>
+      <div class="brand-badge">AI Powered</div>
+    </div>
+  </div>
+
+  <ul class="nav-list">
+    <li class="nav-item <%= (typeof currentPath !== 'undefined' && (currentPath === '/' || currentPath === '/dashboard')) ? 'active' : '' %>">
+      <a href="/dashboard">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </a>
+    </li>
+
+    <% if (user && user.role === 'admin') { %>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/admin/users') ? 'active' : '' %>">
+        <a href="/admin/users">
+          <span class="nav-icon">👥</span>
+          <span>Users & Roles</span>
+        </a>
+      </li>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/admin/classes') ? 'active' : '' %>">
+        <a href="/admin/classes">
+          <span class="nav-icon">🏫</span>
+          <span>Classes & Subjects</span>
+        </a>
+      </li>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/admin/at-risk') ? 'active' : '' %>">
+        <a href="/admin/at-risk">
+          <span class="nav-icon">🚨</span>
+          <span>AI At-Risk Monitor</span>
+        </a>
+      </li>
+    <% } %>
+
+    <% if (user && user.role === 'teacher') { %>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/teacher/attendance') ? 'active' : '' %>">
+        <a href="/teacher/attendance">
+          <span class="nav-icon">📅</span>
+          <span>Attendance Logger</span>
+        </a>
+      </li>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/teacher/marks') ? 'active' : '' %>">
+        <a href="/teacher/marks">
+          <span class="nav-icon">📝</span>
+          <span>Gradebook Marks</span>
+        </a>
+      </li>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/admin/at-risk') ? 'active' : '' %>">
+        <a href="/admin/at-risk">
+          <span class="nav-icon">🚨</span>
+          <span>At-Risk Students</span>
+        </a>
+      </li>
+    <% } %>
+
+    <% if (user && user.role === 'student') { %>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/student/learning-hub') ? 'active' : '' %>">
+        <a href="/student/learning-hub">
+          <span class="nav-icon">🤖</span>
+          <span>AI Learning Hub</span>
+        </a>
+      </li>
+    <% } %>
+
+    <% if (user && user.role === 'parent') { %>
+      <li class="nav-item <%= (typeof currentPath !== 'undefined' && currentPath === '/dashboard') ? 'active' : '' %>">
+        <a href="/dashboard">
+          <span class="nav-icon">👨‍👩‍👧</span>
+          <span>Child Overview</span>
+        </a>
+      </li>
+    <% } %>
+  </ul>
+
+  <% if (user) { %>
+    <div class="sidebar-user">
+      <div class="user-info">
+        <img src="<%= user.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' %>" alt="User" class="user-avatar">
+        <div class="user-details">
+          <h4><%= user.name %></h4>
+          <span class="user-role-chip"><%= user.role %></span>
+        </div>
+      </div>
+      <button class="btn-logout" id="globalLogoutBtn" title="Logout">🚪</button>
+    </div>
+  <% } %>
+</aside>

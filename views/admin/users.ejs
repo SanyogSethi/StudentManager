@@ -1,0 +1,215 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>User & Access Management</h1>
+    <p>Administer accounts across Administrators, Teachers, Students, and Parents</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="openModal('linkParentModal')">🔗 Link Parent to Child</button>
+    <button class="btn btn-primary" onclick="openModal('createUserModal')">+ Create New Account</button>
+  </div>
+</div>
+
+<div class="glass-card">
+  <div class="table-container">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Email</th>
+          <th>Roll / Phone</th>
+          <th>Class / Linked Relations</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% users.forEach(u => { %>
+          <tr>
+            <td>
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <img src="<%= u.avatar %>" style="width: 32px; height: 32px; border-radius: 50%;">
+                <strong style="color: #fff;"><%= u.name %></strong>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-<%= u.role === 'admin' ? 'rose' : (u.role === 'teacher' ? 'cyan' : (u.role === 'student' ? 'indigo' : 'emerald')) %>">
+                <%= u.role.toUpperCase() %>
+              </span>
+            </td>
+            <td><%= u.email %></td>
+            <td><%= u.rollNumber || u.phone || 'N/A' %></td>
+            <td>
+              <% if (u.role === 'student' && u.class) { %>
+                <span style="color: var(--accent-cyan); font-size: 0.85rem;"><%= u.class.name %></span>
+              <% } else if (u.role === 'parent' && u.parentOf && u.parentOf.length > 0) { %>
+                <span style="color: var(--accent-emerald); font-size: 0.82rem;">
+                  Children: <%= u.parentOf.map(c => c.name).join(', ') %>
+                </span>
+              <% } else { %>
+                <span style="color: var(--text-dim);">—</span>
+              <% } %>
+            </td>
+            <td>
+              <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="deleteUser('<%= u._id %>')">🗑️ Delete</button>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Create User -->
+<div class="modal-backdrop" id="createUserModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('createUserModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1.25rem;">Create New User Account</h2>
+    
+    <form id="createUserForm">
+      <div class="form-group">
+        <label>Account Role</label>
+        <select id="newUserRole" class="form-control" required onchange="toggleRoleSpecificFields(this.value)">
+          <option value="student" selected>Student</option>
+          <option value="teacher">Teacher</option>
+          <option value="parent">Parent</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="newUserName" class="form-control" placeholder="John Doe" required>
+      </div>
+
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="newUserEmail" class="form-control" placeholder="user@tpc.edu" required>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="newUserPassword" class="form-control" placeholder="••••••••" value="password123" required>
+      </div>
+
+      <div class="form-group">
+        <label>Phone Number (optional)</label>
+        <input type="text" id="newUserPhone" class="form-control" placeholder="+1-555-0100">
+      </div>
+
+      <!-- Student Specific Fields (Hidden for Admin, Teacher, Parent) -->
+      <div id="studentFieldsContainer">
+        <div class="form-group">
+          <label>Roll Number (for students)</label>
+          <input type="text" id="newUserRoll" class="form-control" placeholder="ST-101">
+        </div>
+
+        <div class="form-group">
+          <label>Class Assignment (for students)</label>
+          <select id="newUserClass" class="form-control">
+            <option value="">None</option>
+            <% classes.forEach(c => { %>
+              <option value="<%= c._id %>"><%= c.name %></option>
+            <% }); %>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Create Account</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Link Parent -->
+<div class="modal-backdrop" id="linkParentModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('linkParentModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1.25rem;">Link Parent Account to Student</h2>
+    
+    <form id="linkParentForm">
+      <div class="form-group">
+        <label>Select Parent Account</label>
+        <select id="selectParentId" class="form-control" required>
+          <% parents.forEach(p => { %>
+            <option value="<%= p._id %>"><%= p.name %> (<%= p.email %>)</option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Select Child (Student Account)</label>
+        <select id="selectStudentId" class="form-control" required>
+          <% students.forEach(s => { %>
+            <option value="<%= s._id %>"><%= s.name %> (<%= s.rollNumber || 'No Roll' %>)</option>
+          <% }); %>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Establish Link</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  function toggleRoleSpecificFields(role) {
+    const studentContainer = document.getElementById('studentFieldsContainer');
+    if (role === 'student') {
+      studentContainer.style.display = 'block';
+    } else {
+      studentContainer.style.display = 'none';
+      document.getElementById('newUserRoll').value = '';
+      document.getElementById('newUserClass').value = '';
+    }
+  }
+
+  document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const role = document.getElementById('newUserRole').value;
+    const data = {
+      name: document.getElementById('newUserName').value,
+      email: document.getElementById('newUserEmail').value,
+      password: document.getElementById('newUserPassword').value,
+      role: role,
+      phone: document.getElementById('newUserPhone').value,
+      rollNumber: role === 'student' ? document.getElementById('newUserRoll').value : null,
+      classId: role === 'student' ? document.getElementById('newUserClass').value : null
+    };
+
+    const res = await API.createUser(data);
+    if (res.success) {
+      showToast('User created successfully');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(res.message || 'Error creating user', 'error');
+    }
+  });
+
+  document.getElementById('linkParentForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const parentId = document.getElementById('selectParentId').value;
+    const studentId = document.getElementById('selectStudentId').value;
+
+    const res = await fetch('/api/v1/users/link-parent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parentId, studentId })
+    }).then(r => r.json());
+
+    if (res.success) {
+      showToast(res.message);
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(res.message, 'error');
+    }
+  });
+
+  async function deleteUser(id) {
+    if (!confirm('Are you sure you want to delete this user?')) return;
+    const res = await fetch(`/api/v1/users/${id}`, { method: 'DELETE' }).then(r => r.json());
+    if (res.success) {
+      showToast('User deleted');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(res.message, 'error');
+    }
+  }
+</script>

@@ -1,0 +1,152 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>Gradebook Assessment Marks</h1>
+    <p>Record quiz, midterm, final exam, and assignment evaluation scores</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-primary" onclick="openModal('addMarkModal')">+ Enter Marks</button>
+  </div>
+</div>
+
+<div class="glass-card">
+  <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1.25rem;">Recent Grade Entries</h2>
+  <div class="table-container">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Class</th>
+          <th>Subject</th>
+          <th>Assessment Title</th>
+          <th>Assessment Type</th>
+          <th>Obtained Score</th>
+          <th>Percentage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (marks && marks.length > 0) { %>
+          <% marks.forEach(m => { %>
+            <% const pct = Math.round((m.obtainedMarks / m.totalMarks) * 100); %>
+            <tr>
+              <td><strong style="color: #fff;"><%= m.student ? m.student.name : 'Unknown' %></strong></td>
+              <td><%= m.class ? m.class.name : 'N/A' %></td>
+              <td><span class="badge badge-indigo"><%= m.subject ? m.subject.name : 'General' %></span></td>
+              <td><%= m.title %></td>
+              <td><%= m.examType %></td>
+              <td><strong><%= m.obtainedMarks %> / <%= m.totalMarks %></strong></td>
+              <td>
+                <span class="badge badge-<%= pct >= 75 ? 'emerald' : (pct >= 50 ? 'amber' : 'high') %>">
+                  <%= pct %>%
+                </span>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2.5rem;">No gradebook entries recorded yet.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal: Add Mark -->
+<div class="modal-backdrop" id="addMarkModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('addMarkModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1.25rem;">Record Gradebook Entry</h2>
+    
+    <form id="addMarkForm">
+      <div class="form-group">
+        <label>Select Class</label>
+        <select id="markClassId" class="form-control" required onchange="updateStudentOptions(this.value)">
+          <option value="">Choose Class</option>
+          <% classes.forEach(c => { %>
+            <option value="<%= c._id %>"><%= c.name %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Select Student</label>
+        <select id="markStudentId" class="form-control" required>
+          <option value="">Select Student</option>
+          <% classes.forEach(c => { %>
+            <% (c.students || []).forEach(s => { %>
+              <option value="<%= s._id %>" class="student-opt class-<%= c._id %>"><%= s.name %> (<%= s.rollNumber || 'No Roll' %>)</option>
+            <% }); %>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Select Subject</label>
+        <select id="markSubjectId" class="form-control" required>
+          <% subjects.forEach(sub => { %>
+            <option value="<%= sub._id %>"><%= sub.name %> (<%= sub.code %>)</option>
+          <% }); %>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Assessment Type</label>
+        <select id="markExamType" class="form-control" required>
+          <option value="Quiz">Quiz</option>
+          <option value="Midterm">Midterm</option>
+          <option value="FinalExam">Final Exam</option>
+          <option value="AssignmentScore">Assignment Score</option>
+          <option value="Project">Project</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Assessment Title</label>
+        <input type="text" id="markTitle" class="form-control" placeholder="Unit Test 1" required>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label>Total Max Marks</label>
+          <input type="number" id="markTotal" class="form-control" value="100" min="1" required oninput="document.getElementById('markObtained').max = this.value">
+        </div>
+        <div class="form-group">
+          <label>Marks Obtained</label>
+          <input type="number" id="markObtained" class="form-control" placeholder="85" min="0" max="100" required>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save Grade Entry</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById('addMarkForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const obtained = Number(document.getElementById('markObtained').value);
+    const total = Number(document.getElementById('markTotal').value);
+
+    if (obtained > total) {
+      showToast(`Obtained marks (${obtained}) cannot exceed total max marks (${total})`, 'error');
+      return;
+    }
+
+    const res = await API.addMark({
+      classId: document.getElementById('markClassId').value,
+      studentId: document.getElementById('markStudentId').value,
+      subjectId: document.getElementById('markSubjectId').value,
+      examType: document.getElementById('markExamType').value,
+      title: document.getElementById('markTitle').value,
+      obtainedMarks: obtained,
+      totalMarks: total
+    });
+
+    if (res.success) {
+      showToast('Marks recorded successfully!');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(res.message, 'error');
+    }
+  });
+</script>

@@ -1,0 +1,239 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>Daily Attendance Logger</h1>
+    <p>Select dates seamlessly via the interactive calendar widget without page reloads</p>
+  </div>
+</div>
+
+<!-- Interactive Class & Calendar Selector Card -->
+<div class="glass-card" style="margin-bottom: 1.5rem;">
+  <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+    
+    <!-- Class Selector -->
+    <div style="display: flex; gap: 1rem; align-items: center;">
+      <label style="font-weight: 600; color: var(--text-muted); min-width: 100px;">Select Class:</label>
+      <select id="classSelect" class="form-control" style="flex: 1;" onchange="handleClassOrDateChange()">
+        <% classes.forEach(c => { %>
+          <option value="<%= c._id %>" <%= (selectedClass && selectedClass._id.toString() === c._id.toString()) ? 'selected' : '' %>>
+            <%= c.name %> (Grade <%= c.gradeLevel %>)
+          </option>
+        <% }); %>
+      </select>
+    </div>
+
+    <!-- Calendar Controls Bar -->
+    <div style="display: flex; flex-wrap: wrap; items-center; justify-content: space-between; gap: 1rem; background: rgba(255,255,255,0.02); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.82rem;" onclick="shiftDate(-1)">◀ Prev Day</button>
+        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.82rem;" onclick="setToday()">Today</button>
+        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.75rem; font-size: 0.82rem;" onclick="shiftDate(1)">Next Day ▶</button>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <label style="font-weight: 600; color: var(--accent-cyan); font-size: 0.88rem;">Calendar Date:</label>
+        <input type="date" id="selectedDate" class="form-control" style="width: auto; padding: 0.4rem 0.75rem; font-size: 0.9rem;" value="<%= selectedDateStr %>" onchange="handleClassOrDateChange()">
+      </div>
+
+    </div>
+
+    <!-- Interactive 5-Day Calendar Strip -->
+    <div id="dateStripContainer" style="display: flex; gap: 0.5rem; justify-content: space-between; overflow-x: auto; padding-bottom: 0.25rem;">
+      <!-- Populated dynamically via JS -->
+    </div>
+
+  </div>
+</div>
+
+<% if (selectedClass && selectedClass.students && selectedClass.students.length > 0) { %>
+  <div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <h2 style="color: #fff; font-size: 1.15rem; margin: 0;"><%= selectedClass.name %></h2>
+        <span id="sessionStatusBadge" class="badge badge-emerald">🟢 Saved Entry for <%= selectedDateStr %></span>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.7rem; font-size: 0.78rem;" onclick="markAll('present')">Mark All Present</button>
+        <button type="button" class="btn btn-secondary" style="padding: 0.4rem 0.7rem; font-size: 0.78rem;" onclick="markAll('absent')">Mark All Absent</button>
+        <button type="button" class="btn btn-primary" onclick="submitAttendanceBatch()">💾 Save Attendance Records</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Student Name</th>
+            <th>Roll Number</th>
+            <th>Attendance Status</th>
+            <th>Remarks / Notes</th>
+          </tr>
+        </thead>
+        <tbody id="studentRosterBody">
+          <% selectedClass.students.forEach(s => { %>
+            <% const prev = existingAttendanceMap[s._id.toString()] || {}; %>
+            <% const currentStatus = prev.status || 'present'; %>
+            <% const currentRemarks = prev.remarks || ''; %>
+
+            <tr class="attendance-row" data-student-id="<%= s._id %>">
+              <td>
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <img src="<%= s.avatar %>" style="width: 32px; height: 32px; border-radius: 50%;">
+                  <strong style="color: #fff;"><%= s.name %></strong>
+                </div>
+              </td>
+              <td><%= s.rollNumber || 'N/A' %></td>
+              <td>
+                <select class="form-control status-select" style="padding: 0.4rem 0.6rem; width: auto; font-size: 0.85rem;">
+                  <option value="present" <%= currentStatus === 'present' ? 'selected' : '' %>>Present</option>
+                  <option value="absent" <%= currentStatus === 'absent' ? 'selected' : '' %>>Absent</option>
+                  <option value="late" <%= currentStatus === 'late' ? 'selected' : '' %>>Late</option>
+                  <option value="excused" <%= currentStatus === 'excused' ? 'selected' : '' %>>Excused</option>
+                </select>
+              </td>
+              <td>
+                <input type="text" class="form-control remarks-input" value="<%= currentRemarks %>" placeholder="Optional remark..." style="padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+<% } else { %>
+  <div class="glass-card" style="text-align: center; padding: 3rem; color: var(--text-muted);">
+    No students enrolled in this class yet.
+  </div>
+<% } %>
+
+<script>
+  let currentDateStr = '<%= selectedDateStr %>';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderDateStrip();
+    fetchSessionAttendance();
+  });
+
+  function renderDateStrip() {
+    const container = document.getElementById('dateStripContainer');
+    if (!container) return;
+
+    const baseDate = new Date(currentDateStr);
+    container.innerHTML = '';
+
+    for (let offset = -2; offset <= 2; offset++) {
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() + offset);
+      const iso = d.toISOString().split('T')[0];
+      const dayName = d.toLocaleDateString('en-US', { weekday: 'short' });
+      const dayNum = d.getDate();
+      const monthName = d.toLocaleDateString('en-US', { month: 'short' });
+
+      const isSelected = iso === currentDateStr;
+      const pill = document.createElement('div');
+      pill.style.cssText = `
+        flex: 1; min-width: 80px; text-align: center; padding: 0.6rem 0.4rem; border-radius: 10px; cursor: pointer;
+        transition: all 0.2s ease; border: 1px solid ${isSelected ? 'var(--accent-primary)' : 'var(--border-color)'};
+        background: ${isSelected ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(6, 182, 212, 0.2))' : 'rgba(255,255,255,0.03)'};
+        color: ${isSelected ? '#fff' : 'var(--text-muted)'};
+      `;
+
+      pill.innerHTML = `
+        <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em;">${dayName}</div>
+        <div style="font-size: 1.1rem; font-weight: 800; margin: 0.1rem 0;">${dayNum}</div>
+        <div style="font-size: 0.7rem;">${monthName}</div>
+      `;
+
+      pill.onclick = () => {
+        document.getElementById('selectedDate').value = iso;
+        handleClassOrDateChange();
+      };
+
+      container.appendChild(pill);
+    }
+  }
+
+  function shiftDate(days) {
+    const d = new Date(currentDateStr);
+    d.setDate(d.getDate() + days);
+    document.getElementById('selectedDate').value = d.toISOString().split('T')[0];
+    handleClassOrDateChange();
+  }
+
+  function setToday() {
+    document.getElementById('selectedDate').value = new Date().toISOString().split('T')[0];
+    handleClassOrDateChange();
+  }
+
+  function handleClassOrDateChange() {
+    currentDateStr = document.getElementById('selectedDate').value;
+    renderDateStrip();
+    fetchSessionAttendance();
+  }
+
+  async function fetchSessionAttendance() {
+    const classId = document.getElementById('classSelect').value;
+    const date = currentDateStr;
+
+    try {
+      const res = await fetch(`/api/v1/attendance/session?classId=${classId}&date=${date}`).then(r => r.json());
+      if (res.success) {
+        const badge = document.getElementById('sessionStatusBadge');
+        if (res.isAlreadyRecorded) {
+          badge.className = 'badge badge-emerald';
+          badge.innerHTML = `🟢 Saved Entry for ${date} (Editing Mode)`;
+        } else {
+          badge.className = 'badge badge-indigo';
+          badge.innerHTML = `🔵 New Attendance Session for ${date}`;
+        }
+
+        // Update roster status dropdowns & remarks inputs without page reload
+        const records = res.records || {};
+        document.querySelectorAll('.attendance-row').forEach(row => {
+          const studentId = row.getAttribute('data-student-id');
+          const rec = records[studentId];
+          const statusSelect = row.querySelector('.status-select');
+          const remarksInput = row.querySelector('.remarks-input');
+
+          if (rec) {
+            statusSelect.value = rec.status || 'present';
+            remarksInput.value = rec.remarks || '';
+          } else {
+            statusSelect.value = 'present';
+            remarksInput.value = '';
+          }
+        });
+      }
+    } catch(err) {
+      console.warn('Error fetching session attendance:', err);
+    }
+  }
+
+  function markAll(status) {
+    document.querySelectorAll('.status-select').forEach(sel => sel.value = status);
+  }
+
+  async function submitAttendanceBatch() {
+    const classId = document.getElementById('classSelect').value;
+    const date = currentDateStr;
+    const rows = document.querySelectorAll('.attendance-row');
+
+    const records = Array.from(rows).map(row => ({
+      studentId: row.getAttribute('data-student-id'),
+      status: row.querySelector('.status-select').value,
+      remarks: row.querySelector('.remarks-input').value
+    }));
+
+    const res = await API.recordBatchAttendance({ classId, date, records });
+    if (res.success) {
+      showToast(res.message);
+      // Update badge to saved state asynchronously without page reload
+      const badge = document.getElementById('sessionStatusBadge');
+      badge.className = 'badge badge-emerald';
+      badge.innerHTML = `🟢 Saved Entry for ${date} (Editing Mode)`;
+    } else {
+      showToast(res.message, 'error');
+    }
+  }
+</script>

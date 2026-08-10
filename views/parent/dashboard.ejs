@@ -1,0 +1,79 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>Parent Portal & Child Monitoring</h1>
+    <p>Real-time academic performance tracking, attendance alerts, and AI home guidance reports</p>
+  </div>
+</div>
+
+<% if (childrenSummaries && childrenSummaries.length > 0) { %>
+  <% childrenSummaries.forEach(item => { %>
+    <% const child = item.child; %>
+    <% const summary = item.summary; %>
+    <% const report = item.report; %>
+
+    <div class="glass-card" style="margin-bottom: 2rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); padding-bottom: 1.25rem; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 1rem;">
+          <img src="<%= child.avatar %>" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--accent-cyan);">
+          <div>
+            <h2 style="color: #fff; font-size: 1.35rem; font-weight: 700;"><%= child.name %></h2>
+            <div style="color: var(--text-muted); font-size: 0.88rem;">
+              Enrolled Class: <strong style="color: var(--accent-cyan);"><%= child.class ? child.class.name : 'Unassigned' %></strong> | Roll: <%= child.rollNumber || 'N/A' %>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <span class="badge badge-<%= summary.riskAnalysis.riskLevel %>" style="padding: 0.5rem 1rem; font-size: 0.85rem;">
+            Risk Status: <%= summary.riskAnalysis.riskLevel.toUpperCase() %>
+          </span>
+        </div>
+      </div>
+
+      <!-- Key Child Metrics -->
+      <div class="grid-metrics" style="margin-bottom: 1.5rem;">
+        <div class="glass-card metric-card" style="background: rgba(255,255,255,0.02);">
+          <div class="metric-data">
+            <h3>Attendance Rate</h3>
+            <div class="metric-value"><%= summary.attendance.percentage %>%</div>
+          </div>
+          <div class="metric-icon-box bg-emerald">📅</div>
+        </div>
+
+        <div class="glass-card metric-card" style="background: rgba(255,255,255,0.02);">
+          <div class="metric-data">
+            <h3>Academic Grade Average</h3>
+            <div class="metric-value"><%= summary.academics.overallPercentage %>%</div>
+          </div>
+          <div class="metric-icon-box bg-indigo">📊</div>
+        </div>
+
+        <div class="glass-card metric-card" style="background: rgba(255,255,255,0.02);">
+          <div class="metric-data">
+            <h3>Performance Velocity</h3>
+            <div class="metric-value" style="font-size: 1.3rem; text-transform: capitalize;"><%= summary.academics.performanceTrend %></div>
+          </div>
+          <div class="metric-icon-box bg-cyan">📈</div>
+        </div>
+      </div>
+
+      <!-- AI Parent Digest Report -->
+      <div class="ai-banner">
+        <div class="ai-header">
+          <span class="ai-sparkle">✨</span>
+          <div class="ai-title">AI Home Learning Guidance Report for <%= child.name %></div>
+        </div>
+        <p class="ai-body" style="white-space: pre-line;"><%= report.digest %></p>
+        <div style="margin-top: 0.8rem; font-size: 0.78rem; color: var(--accent-cyan); font-weight: 600;">
+          Generated via: <%= report.generatedBy %>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+<% } else { %>
+  <div class="glass-card" style="text-align: center; padding: 4rem; color: var(--text-muted);">
+    <div style="font-size: 3rem; margin-bottom: 1rem;">👨‍👩‍👧</div>
+    <h3>No linked children found for your parent account</h3>
+    <p style="margin-top: 0.5rem;">Please contact the school administrator to link your parent profile with your child's student record.</p>
+  </div>
+<% } %>

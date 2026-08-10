@@ -1,0 +1,179 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>Student Portal & Academic Overview</h1>
+    <p>Track GPA metrics, attendance, assignment tasks, and personalized study targets</p>
+  </div>
+  <div class="header-actions">
+    <a href="/student/learning-hub" class="btn btn-ai">✨ AI Study Hub</a>
+  </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="grid-metrics">
+  <div class="glass-card metric-card">
+    <div class="metric-data">
+      <h3>Academic Score Average</h3>
+      <div class="metric-value"><%= summary.academics.overallPercentage %>%</div>
+    </div>
+    <div class="metric-icon-box bg-indigo">🏆</div>
+  </div>
+
+  <div class="glass-card metric-card">
+    <div class="metric-data">
+      <h3>Attendance Rate</h3>
+      <div class="metric-value"><%= summary.attendance.percentage %>%</div>
+    </div>
+    <div class="metric-icon-box bg-emerald">📅</div>
+  </div>
+
+  <div class="glass-card metric-card">
+    <div class="metric-data">
+      <h3>Performance Trajectory</h3>
+      <div class="metric-value" style="font-size: 1.4rem; text-transform: capitalize;">
+        <%= summary.academics.performanceTrend %>
+      </div>
+    </div>
+    <div class="metric-icon-box bg-cyan">📈</div>
+  </div>
+
+  <div class="glass-card metric-card">
+    <div class="metric-data">
+      <h3>Pending Homework</h3>
+      <div class="metric-value" style="color: <%= summary.assignments.pendingAssignmentsCount > 0 ? 'var(--accent-amber)' : 'var(--accent-emerald)' %>">
+        <%= summary.assignments.pendingAssignmentsCount %>
+      </div>
+    </div>
+    <div class="metric-icon-box bg-amber">📝</div>
+  </div>
+</div>
+
+<!-- AI Performance Quick Digest -->
+<div class="ai-banner">
+  <div class="ai-header">
+    <span class="ai-sparkle">✨</span>
+    <div class="ai-title">Gemini AI Personalized Academic Digest</div>
+  </div>
+  <p class="ai-body">
+    <%= insight ? insight.summary : summary.student.name + ' is showing stable progress. Complete pending assignments to improve continuous assessment grades.' %>
+  </p>
+  <div style="margin-top: 1rem;">
+    <a href="/student/learning-hub" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Explore Recommended Study Path →</a>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <!-- Subject Breakdown Chart -->
+  <div class="glass-card">
+    <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Subject Performance Breakdown</h2>
+    <div style="height: 250px; position: relative;">
+      <canvas id="studentSubjectChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Attendance Doughnut Chart -->
+  <div class="glass-card">
+    <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Attendance Distribution</h2>
+    <div style="height: 250px; position: relative;">
+      <canvas id="studentAttendanceChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Pending Assignments & Submissions -->
+<div class="glass-card">
+  <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1.25rem;">Class Homework & Submissions</h2>
+  <div class="table-container">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Subject</th>
+          <th>Due Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (assignments && assignments.length > 0) { %>
+          <% assignments.forEach(a => { %>
+            <% const sub = submissions.find(s => s.assignment.toString() === a._id.toString()); %>
+            <tr>
+              <td><strong style="color: #fff;"><%= a.title %></strong></td>
+              <td><%= a.subject ? a.subject.name : 'General' %></td>
+              <td><%= new Date(a.dueDate).toLocaleDateString() %></td>
+              <td>
+                <% if (sub) { %>
+                  <span class="badge badge-emerald">Submitted (<%= sub.status %>)</span>
+                <% } else { %>
+                  <span class="badge badge-amber">Pending</span>
+                <% } %>
+              </td>
+              <td>
+                <% if (!sub) { %>
+                  <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.75rem;" onclick="openSubmitModal('<%= a._id %>', '<%= a.title %>')">
+                    Submit Homework
+                  </button>
+                <% } else { %>
+                  <span style="font-size: 0.8rem; color: var(--accent-cyan);">Score: <%= sub.obtainedMarks !== null ? sub.obtainedMarks + '/' + a.maxMarks : 'Grading pending' %></span>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        <% } else { %>
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No assignments currently assigned.</td>
+          </tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Submission Modal -->
+<div class="modal-backdrop" id="submitModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('submitModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1rem;" id="submitModalTitle">Submit Assignment</h2>
+    
+    <form id="submitForm">
+      <input type="hidden" id="submitAssignmentId">
+      <div class="form-group">
+        <label>Your Homework Content / Response / Solution URL</label>
+        <textarea id="submitContent" class="form-control" rows="5" placeholder="Enter your detailed response or solution link here..." required></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%;">Upload & Submit</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const subjectData = <%- JSON.stringify(summary.academics.subjectBreakdown) %>;
+    initStudentPerformanceChart('studentSubjectChart', subjectData);
+
+    const present = <%= summary.attendance.presentDays %>;
+    const absent = <%= summary.attendance.absentDays %>;
+    initAttendanceDoughnut('studentAttendanceChart', present, absent);
+  });
+
+  function openSubmitModal(id, title) {
+    document.getElementById('submitAssignmentId').value = id;
+    document.getElementById('submitModalTitle').innerText = 'Submit: ' + title;
+    openModal('submitModal');
+  }
+
+  document.getElementById('submitForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('submitAssignmentId').value;
+    const content = document.getElementById('submitContent').value;
+
+    const res = await API.submitAssignment(id, content);
+    if (res.success) {
+      showToast('Assignment submitted successfully!');
+      setTimeout(() => location.reload(), 600);
+    } else {
+      showToast(res.message, 'error');
+    }
+  });
+</script>

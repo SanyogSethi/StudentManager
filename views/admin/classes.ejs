@@ -1,0 +1,164 @@
+<div class="top-header">
+  <div class="header-title">
+    <h1>Classes & Academic Subjects</h1>
+    <p>Configure grade levels, class rosters, and subject assignments</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="openModal('createSubjectModal')">+ Add Subject</button>
+    <button class="btn btn-primary" onclick="openModal('createClassModal')">+ Add New Class</button>
+  </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <!-- Classes Panel -->
+  <div class="glass-card">
+    <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Active Classes</h2>
+    <div class="table-container">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Class Name</th>
+            <th>Grade</th>
+            <th>Teacher</th>
+            <th>Enrolled</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% classes.forEach(c => { %>
+            <tr>
+              <td><strong style="color: var(--accent-cyan);"><%= c.name %></strong></td>
+              <td>Grade <%= c.gradeLevel %></td>
+              <td><%= c.classTeacher ? c.classTeacher.name : 'Unassigned' %></td>
+              <td><%= c.students ? c.students.length : 0 %> Students</td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Subjects Panel -->
+  <div class="glass-card">
+    <h2 style="color: #fff; font-size: 1.15rem; margin-bottom: 1rem;">Academic Subjects</h2>
+    <div class="table-container">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Subject Name</th>
+            <th>Code</th>
+            <th>Assigned Faculty</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% subjects.forEach(s => { %>
+            <tr>
+              <td><strong style="color: var(--accent-purple);"><%= s.name %></strong></td>
+              <td><span class="badge badge-indigo"><%= s.code %></span></td>
+              <td><%= s.teacher ? s.teacher.name : 'Unassigned' %></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create Class -->
+<div class="modal-backdrop" id="createClassModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('createClassModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1.25rem;">Create New Class</h2>
+    
+    <form id="createClassForm">
+      <div class="form-group">
+        <label>Class Name</label>
+        <input type="text" id="className" class="form-control" placeholder="Grade 10-A" required>
+      </div>
+
+      <div class="form-group">
+        <label>Grade Level</label>
+        <input type="text" id="classGrade" class="form-control" placeholder="10" required>
+      </div>
+
+      <div class="form-group">
+        <label>Section</label>
+        <input type="text" id="classSection" class="form-control" placeholder="A" value="A">
+      </div>
+
+      <div class="form-group">
+        <label>Class Teacher</label>
+        <select id="classTeacherId" class="form-control">
+          <option value="">Select Faculty</option>
+          <% teachers.forEach(t => { %>
+            <option value="<%= t._id %>"><%= t.name %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save Class</button>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Create Subject -->
+<div class="modal-backdrop" id="createSubjectModal">
+  <div class="modal-card">
+    <button class="modal-close" onclick="closeModal('createSubjectModal')">✕</button>
+    <h2 style="color: #fff; margin-bottom: 1.25rem;">Add Academic Subject</h2>
+    
+    <form id="createSubjectForm">
+      <div class="form-group">
+        <label>Subject Name</label>
+        <input type="text" id="subjectName" class="form-control" placeholder="Mathematics" required>
+      </div>
+
+      <div class="form-group">
+        <label>Subject Code</label>
+        <input type="text" id="subjectCode" class="form-control" placeholder="MATH101" required>
+      </div>
+
+      <div class="form-group">
+        <label>Assigned Teacher</label>
+        <select id="subjectTeacherId" class="form-control">
+          <option value="">Select Faculty</option>
+          <% teachers.forEach(t => { %>
+            <option value="<%= t._id %>"><%= t.name %></option>
+          <% }); %>
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Save Subject</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  document.getElementById('createClassForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await API.createClass({
+      name: document.getElementById('className').value,
+      gradeLevel: document.getElementById('classGrade').value,
+      section: document.getElementById('classSection').value,
+      teacherId: document.getElementById('classTeacherId').value
+    });
+
+    if (res.success) {
+      showToast('Class created successfully');
+      setTimeout(() => location.reload(), 600);
+    } else showToast(res.message, 'error');
+  });
+
+  document.getElementById('createSubjectForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await API.createSubject({
+      name: document.getElementById('subjectName').value,
+      code: document.getElementById('subjectCode').value,
+      teacherId: document.getElementById('subjectTeacherId').value
+    });
+
+    if (res.success) {
+      showToast('Subject created successfully');
+      setTimeout(() => location.reload(), 600);
+    } else showToast(res.message, 'error');
+  });
+</script>

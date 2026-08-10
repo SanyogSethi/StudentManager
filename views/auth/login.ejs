@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Aegis Academic AI System</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <style>
+    body {
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+      padding: 1.5rem;
+    }
+    .quick-role-btn {
+      padding: 0.5rem;
+      font-size: 0.75rem;
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      background: rgba(255,255,255,0.05);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      flex: 1;
+      text-align: center;
+    }
+    .quick-role-btn:hover {
+      background: rgba(99, 102, 241, 0.2);
+      border-color: var(--accent-primary);
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="glass-card" style="padding: 2.5rem 2rem;">
+      <div style="text-align: center; margin-bottom: 2rem;">
+        <div class="brand-icon" style="margin: 0 auto 1rem; width: 54px; height: 54px; font-size: 1.6rem;">⚡</div>
+        <h1 style="font-size: 1.6rem; font-weight: 800; color: #fff;">Aegis Academic</h1>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-top: 0.3rem;">AI-Powered Student Management Portal</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" class="form-control" placeholder="user@tpc.edu" required>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem; padding: 0.85rem;">
+          Sign In to Portal ➔
+        </button>
+      </form>
+
+      <div style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
+        <p style="font-size: 0.78rem; text-align: center; color: var(--text-muted); margin-bottom: 0.8rem; font-weight: 600;">
+          DEFAULT DEMO ACCOUNTS (1-CLICK SIGN IN):
+        </p>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="quick-role-btn" onclick="fillCredentials('admin@tpc.edu', 'password123')">👑 Admin</button>
+          <button class="quick-role-btn" onclick="fillCredentials('shashibala@tpc.edu', 'password123')">👩‍🏫 Teacher</button>
+          <button class="quick-role-btn" onclick="fillCredentials('mishthi@tpc.edu', 'password123')">🎓 Student</button>
+          <button class="quick-role-btn" onclick="fillCredentials('ashish@tpc.edu', 'password123')">👨‍👩‍👧 Parent</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    function fillCredentials(email, pass) {
+      document.getElementById('email').value = email;
+      document.getElementById('password').value = pass;
+      document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await API.login(email, password);
+        if (res.success) {
+          showToast('Authenticated! Redirecting...', 'success');
+          setTimeout(() => window.location.href = '/dashboard', 600);
+        } else {
+          showToast(res.message || 'Login failed', 'error');
+        }
+      } catch (err) {
+        showToast('Network error during login', 'error');
+      }
+    });
+  </script>
+</body>
+</html>
