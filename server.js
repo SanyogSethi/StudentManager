@@ -8,6 +8,9 @@ const cors = require('cors');
 
 const connectDB = require('./config/db');
 const { initAI } = require('./config/ai');
+const { seedDatabase } = require('./services/seedService');
+const User = require('./models/User');
+
 const viewRoutes = require('./routes/viewRoutes');
 const authRoutes = require('./routes/api/v1/authRoutes');
 const userRoutes = require('./routes/api/v1/userRoutes');
@@ -21,7 +24,18 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 initAI();
-connectDB();
+
+connectDB().then(async () => {
+  try {
+    const userCount = await User.countDocuments();
+    if (userCount === 0) {
+      console.log('[Server Startup] Database empty. Auto-seeding sample dataset...');
+      await seedDatabase();
+    }
+  } catch (err) {
+    console.warn('[Server Startup Notice]', err.message);
+  }
+});
 
 app.use(cors());
 app.use(express.json());
